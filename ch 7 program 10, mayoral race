@@ -1,0 +1,519 @@
+//
+//  main.c
+//  ch 7 program 10
+//
+//  Created by Ryan Roderick on 11/7/20.
+//
+
+/* From "Problem Solving and Program Design in C" by Jeri Hanly and Elliot Koffman, 7th Ed., 2013. */
+
+/* Problem 10 pages 448-9 */
+
+/* The results from the mayor's race have been reported by each precinct as follows:
+ 
+        Candidate A     Candidate B     Candidate C     Candidate D
+ Precinct
+ 1          192             48              206             37
+ 2          147             90              312             21
+ 3          186             12              121             38
+ 4          114             21              408             39
+ 5          267             13              382             29
+ 
+ Write a program to do the following:
+ a. Display the table with appropriate labels for the rows and columns.
+ b. Compute and display the total numnber of votes received by each candidate and the percentage of the total vote cast.
+ c. If any one candidate received more than 50 percent of the votes, the program should display a message declaring that the candidate the winner.
+ d. If no candidate received 50 percent of the votes, the program should display a message declaring a runoff between the two candidates receiving the highest number of votes; the two candidates should be identified by their letter names.
+ e. Run the program once with the data shown and once with candidate C receiving only 108 votes in Precinct 4.
+ 
+ 
+ ANALYSIS
+ Following the pattern in the book for a table like this, I will need two enumerated type arrays for the candidates and the precincts.  Then, I will need one multi-dimensional array for the votes for each candidate in each district.
+ 
+ DATA REQUIREMENTS
+ Types:
+    candidate_t { candidate_A, candidate_B, candidate_C, candidate_D }
+    precinct_t { precinct_1, precinct_2, precinct_3, precinct_4 }
+ 
+ Problem constants:
+    NUM_CANDIDATES 4
+    NUM_PRECINCTS 5
+ 
+ Problem inputs:
+    Results table file
+    int votes[NUM_CANDIDATES] [NUM_PRECINCTS]
+ 
+ Problem outputs:
+    total votes received
+    percentage of total votes
+    winner
+    runoff
+ 
+ DESIGN
+ Initial algorithm:
+ 
+ 1. Scan the voting data by precinct and candidate, and return a value to show success or failure of the scan.
+ 2. If the scan works correctly,
+    3. Calculate the precinct totals and total number of votes.
+    4. Calculate the candidate totals and the percentage each candidate won.
+    5. Display winner or runoff and data.
+  */
+
+#include <stdio.h>
+
+#define NUM_CANDIDATES 4
+#define NUM_PRECINCTS 5
+#define THRESHOLD 50.0
+
+typedef enum
+    { candidate_A, candidate_B, candidate_C, candidate_D }
+candidate_t;
+/* Giving the candidates a name in the enumerated array, instead of just using an integer, helps me understand what the program is manipulating in the loops and parallel arrays. */
+
+typedef enum
+    { precinct_one, precinct_two, precinct_three, precinct_four, precinct_five }
+precinct_t;
+
+
+/* Get data and make calculations. */
+void initialize_multi(int[][NUM_CANDIDATES], int);
+
+int scan_table(int[][NUM_CANDIDATES]);
+
+void sum_columns(int[], int[][NUM_CANDIDATES]);
+
+void percents_total(int[], double[]);
+
+void select_sort(int[], double[]);
+
+int get_max_index(double[], int);
+
+
+/* Display data and the winner or runnoff candidates. */
+void display_banner_labels(void);
+
+void display_data_table(int[][NUM_CANDIDATES]);
+
+void display_totals(int[]);
+
+void display_percentages(double[]);
+
+int display_winner(double[]);
+
+void display_runoff(double[], int[]);
+
+void display_candidate(candidate_t);
+
+void display_precinct(int);
+
+
+
+int main(int argc, const char * argv[]) {
+    
+    /* Input variables. */
+    int results[NUM_PRECINCTS][NUM_CANDIDATES];
+    int status;
+    
+    /* Output variables. */
+    int candidate_totals[NUM_CANDIDATES];
+    double candidate_percents[NUM_CANDIDATES];
+    int candidate_ranks[] = { 0, 1, 2, 3 }; /* This array allows the program to rank the values in the 'candidate_percents' array and keep track of which candidate won what percent of the votes. */
+    
+    /* Input */
+    status = scan_table(results);
+    if (status == 1)
+    {
+        /* Output */
+        sum_columns(candidate_totals, results);
+        percents_total(candidate_totals, candidate_percents);
+        
+        /* Display */
+        display_banner_labels();
+        display_data_table(results);
+        display_totals(candidate_totals);
+        display_percentages(candidate_percents);
+
+        status = display_winner(candidate_percents);
+        if (status == 1) {
+            return (0);
+        }
+        display_runoff(candidate_percents, candidate_ranks);
+    } else
+        return(0);
+
+    
+    return (0);
+}
+
+
+/* I put 'initialize_multi' first because it is the first thing that needs to happen.  Then, I list the calculation functions after the 'scan_table' function. */
+void initialize_multi(int multi_dimensional_array[][NUM_CANDIDATES], int value)
+/* Using enumerated types for the rows and columns creates a clearer picture of how the function initializes the array.  These variables assure the code maintainer of the matrix's orientation.  */
+{
+    int row;
+    int col;
+    
+    for ( row=0; row < NUM_PRECINCTS; ++row ) {
+        
+        for ( col = 0; col < NUM_CANDIDATES; ++col ) {
+            
+            multi_dimensional_array[row][col] = value;
+        }
+    }
+}
+
+
+int scan_table(int results[][NUM_CANDIDATES])
+{
+    FILE *result_file_p;
+    int status;
+    
+    int precinct_row;
+    int candidate_col;
+    int precinct_votes;
+    /* These variables give information about the type of row and column they take data from, which helps the reader recognize if there are differences in the table they are scanning into the program. */
+    
+    int valid_table = 1;
+    char ch;
+    
+    initialize_multi(results, 0);
+    
+    result_file_p = fopen("results_DB.txt", "r");
+    
+    for (status = fscanf(result_file_p, "%d%d%d\n",
+                         &precinct_row,
+                         &candidate_col,
+                         &precinct_votes); /* 'precinct_votes' is the actual number for the table.  And, I gave each assignment statement its own line for readability. */
+
+         status == 3 && valid_table;
+         
+         status = fscanf(result_file_p, "%d%d%d\n",
+                         &precinct_row,
+                         &candidate_col,
+                         &precinct_votes))
+    {
+        if (precinct_row >= precinct_one &&
+            precinct_row <= precinct_five &&
+            candidate_col >= candidate_A &&
+            candidate_col <= candidate_D)
+        /* Because of the enumerated types in the conditional statements, the programer could change the range of precincts and candidates to compage.  And, this 'if/else' sequence begins error handling for the scan function.  First, it will print the following error messages if a row or column number is out of range. */
+        {
+                results[precinct_row][candidate_col] = precinct_votes;
+        
+        } else {
+            printf("Invalid precinct or candidate -- \n");
+            printf("  precinct is ");
+            display_precinct(precinct_row);
+            printf(", candidate is ");
+            display_candidate(candidate_col);
+            printf("\n\n");
+            valid_table = 0;
+        }
+           
+    }
+    
+     if (!valid_table) {
+        status = 0;
+         /* If the table is not valid, the compiler would have printed the above "Invalid..." error messages, and the 'status = 0' assignment will return to the 'main' function, which stops the calculations and display portions of the program. */
+     } else if (status == EOF) {
+         status = 1;
+         /* This 'else if' statement confirms that the last character the compiler read from the file is the 'EOF' character and returns 'status = 1' to the 'main' function so that the rest of the program will execute. */
+     } else {
+         /* The compiler executes this 'else' option if the 'for' loop encounters a scanning error where 'status' would NOT equal 3.  At that point the 'for' loop above stops, and the compiler returns here, scans the file for a character and prints it out.  This loop only catches the one character before printing it out and ending the program, so if there is more than one in the data file, the program will find it the next time it runs.  */
+        printf("Error in revenue data format. Revise data.\n");
+        printf("ERROR HERE >>> ");
+        for (status = fscanf(result_file_p, "%c", &ch);
+            status == 1 && ch != '\n';
+            status = fscanf(result_file_p, "%c", &ch)) {
+          printf("%c", ch);
+        }
+     printf(" <<<\n");
+     status = 0;
+     }
+     
+    return(status);
+}
+
+
+/* The parameter 'candidate_totals' is an output array.  The 'sum_columns' function adds up the votes for each candidate.  Using the enumerated types 'precinct' and 'candidate' make that really clear. */
+void sum_columns(int candidate_totals[], int results[][NUM_CANDIDATES])
+{
+    candidate_t candidate;
+    precinct_t precinct;
+    int total=0;
+    for (candidate=0; candidate<NUM_CANDIDATES; ++candidate)
+    {
+        for (precinct = precinct_one; precinct < NUM_PRECINCTS;
+                ++precinct)
+        {
+            total += results[precinct][candidate];
+        }
+        candidate_totals[candidate] = total;
+        total = 0;
+    }
+}
+
+
+/* 'candidate_totals' is an input array, and 'candidate_percents' is an output array.  The program uses 'i' as the increment */
+void percents_total(int candidate_totals[], double candidate_percents[])
+{
+    candidate_t candidate;
+    double percentage,
+        sum_total=0;
+    for (candidate=0; candidate<NUM_CANDIDATES; ++candidate)
+    {
+        sum_total += candidate_totals[candidate];
+    }
+    
+    for (candidate=0; candidate<NUM_CANDIDATES; ++candidate)
+    {
+        percentage = (candidate_totals[candidate] / sum_total) * 100;
+        
+        candidate_percents[candidate] = percentage;
+    }
+}
+
+
+/* The display portion of the program begins with labels for the table. */
+void display_banner_labels(void)
+{
+    int i;
+    printf("%10c", ' ');
+    for (i=0; i<NUM_CANDIDATES; ++i)
+    {
+        printf("Candidate %4c", ' ');
+    }
+    puts(" ");
+    
+    printf("%8s %4c", "Precinct", ' ');
+    printf("A %12c B %11c C %11c D \n", ' ', ' ', ' ');
+
+    printf("---------------------------------");
+    puts("-----------------------------");
+}
+
+
+/* The constant macros let the reader know how the program is displaying the table. */
+void display_data_table(int results[][NUM_CANDIDATES])
+{
+    candidate_t candidate;
+    precinct_t precinct;
+    
+    for (precinct=0; precinct<NUM_PRECINCTS; ++precinct) {
+        printf("%d %11c", precinct+1, ' ');
+        for (candidate=0; candidate<NUM_CANDIDATES; ++candidate) {
+            printf("%3d%11c", results[precinct][candidate], ' ');
+        }
+        puts(" ");
+    }
+    printf("---------------------------------");
+    puts("-----------------------------");
+}
+
+
+/* Displays the 'Total' line below the table. */
+void display_totals(int candidate_totals[])
+{
+    candidate_t candidate;
+    
+    printf("\nTotal %6c", ' ');
+    for ( candidate = candidate_A; candidate <= candidate_D; ++candidate )
+    {
+        printf("%4d%10c", candidate_totals[candidate], ' ');
+    }
+    puts("\n");
+}
+
+
+/* Displays the "Percent" line after the 'Total' line. */
+void display_percentages(double candidate_percents[])
+{
+    candidate_t candidate;
+    
+    printf("Percent %4c", ' ');
+    for ( candidate = candidate_A; candidate <= candidate_D; ++candidate )
+    {
+        printf("%%%-4.1f %8c", candidate_percents[candidate], ' ');
+    }
+    puts("\n");
+        
+}
+
+
+/* Displays the winner if there is one.  The 'candidate_percents' array is an input variable. */
+int display_winner(double candidate_percents[])
+{
+    int status = 0; /* The 'status' variable tells the 'main' function whether or not one of the candidates won more than 50 percent of the votes. */
+    
+    candidate_t candidate;
+    
+    /* This 'for' loop checks whether a candidate won more than 50 percent of the votes. */
+    for (candidate = candidate_A; candidate <= candidate_D; ++candidate)
+    {
+        if ( THRESHOLD < candidate_percents[candidate])
+        {
+            status = 1;
+            printf("Winner: Candidate ");
+            display_candidate(candidate);
+            puts("\n");
+            break;
+        }
+    }
+        
+    return(status);
+}
+
+
+/* If none of the candidates won more than 50 percent of the vote, this function runs.  The value of the 'status' variable determines this decision in the 'main' function. */
+void display_runoff(double candidate_percents[], int candidate_ranks[])
+{
+    /* The function uses these variables to print out the names/designations of the first and secont place candidates in the rankigns. */
+    int runoff_one = 0,
+        runoff_two = 1;
+    
+    /* display_runoff(*/
+    printf("Runoff between candidates \n\n");
+    
+    /* This 'select_sort' is a function call to a key function in this program.  It sorts the percentages each candidate won from most to least and at the same time, sorts the integers that represent each candidate along with their respective percentage. */
+    select_sort(candidate_ranks, candidate_percents);
+    
+    display_candidate(candidate_ranks[runoff_one]);
+    
+    printf("and ");
+    
+    display_candidate(candidate_ranks[runoff_two]);
+    
+    printf("!!! \n\n");
+    
+    /* The series of 'for' loops below print out the full rankings and corresponding percentages for each candidate. */
+    int i;
+    printf("Overall ranking:       ");
+    for (i=0; i<4; ++i) {
+        printf("%-5d ", candidate_ranks[i]);
+    }
+    puts("\n");
+    
+    printf("Percentage of votes:  ");
+    for (i=0; i<4; ++i) {
+        printf("%-4.1f  ", candidate_percents[i]);
+    }
+    
+    puts("\n");
+}
+
+
+/* For working with parallel arrays, this program locates the largest element in the 'percentes' array.  But, then it records that increment number as a value and switches around the values in 'rank' and 'percents' in the same 'for' loop in order to keep the candidates numbers and the percentages of votes they won connected.
+ */
+void select_sort(int ranks[], double percents[])
+{
+    int fill, /* Denotes the current array increment the program is filling. */
+        max_index,
+        temp_ranks;
+    double temp_percents;
+    
+    for(fill=0; fill < NUM_CANDIDATES ; ++fill)
+    {
+        max_index = get_max_index(percents, fill); /* Obtains the increment number of the largest value in the 'percents' array*/
+        
+        if (fill != max_index) { /* Simultaneously switches the largest percentage number in 'percents' and the value in 'ranks' (which represents the candidate's original integer number) so that the program can continue to match them. */
+            
+            temp_ranks = ranks[max_index];
+            temp_percents = percents[max_index];
+            
+            ranks[max_index] = ranks[fill];
+            percents[max_index] = percents[fill];
+            
+            ranks[fill] = temp_ranks;
+            percents[fill] = temp_percents;
+            
+        }
+    }
+}
+
+/* Returns the increment number of largest (remaining) value in the 'percents' array. */
+int get_max_index(double percents[], int fill)
+{
+    int i;
+    for(i=fill; i<NUM_CANDIDATES; ++i) {
+        
+        if( percents[fill] < percents[i] )
+        {
+            fill = i;
+        }
+    }
+    return(fill);
+}
+/* This sends back the index of the largest percentage in the 'percents' array.  The 'for' loop will go through the whole array, replacing the increment number in 'max' as it encounters larger and larger percentages until it ends up with the largest one's index.  That is why it can go to the next index number on subsequent function calls and sort out the next largest percentage increment from there.  'max' will always be the new, incremented, starting point in searching the 'percents' array, and if it is not already the largest number, it will become it.
+ */
+
+
+
+/* The 'scan_table' function calls this function in its error handling portion.  It is the only function that calls this 'display_percent' function.*/
+void display_precinct(int precinct_row)
+{
+    switch(precinct_row)
+    {
+        case 0:
+            printf("1");
+            break;
+            
+        case 1:
+            printf("2");
+            break;
+            
+        case 2:
+            printf("3");
+            break;
+            
+        case 3:
+            printf("4");
+            break;
+            
+        case 4:
+            printf("5");
+            
+        default:
+            printf("Invalid precinct number: %d\n", precinct_row);
+    }
+}
+
+
+/* The 'scan_table' function calls this function in it's error handling portion.  The 'display_winner' and 'display_runnoff' functions also call it. */
+void display_candidate(candidate_t candidate)
+{
+    switch(candidate)
+    {
+        case 0:
+            printf("A ");
+            break;
+            
+        case 1:
+            printf("B ");
+            break;
+            
+        case 2:
+            printf("C ");
+            break;
+            
+        case 3:
+            printf("D ");
+            break;
+            
+        default:
+            printf("Invalid candidate: %d", candidate);
+    }
+}
+/*
+ LEARNED: INITIALIZE FIRST, IN FUNCTION
+ The first thing I learned while writing this program is that I wanted to write the 'initialize_multi' function first, becuase then I can start printing out things to make sure I have them right.  The second thing I learned is that I want that function to call from within the 'scan_table' function because that is where the program uses it and it does not need to clutter up the main funciton.
+ 
+ PRACTICED: KEEP TRACK OF CALLS
+ With that said, I am initializing the 'results' table.  I declare the 'results' table in the main function, call it in the 'scan_table', and call it again into the 'initialize_multi' function.  Then, I populate it in the 'scan_table' function.
+ 
+ PRACTICED: INCORPORATING OUTSIDE FUNCTIONS
+ Now, I'm learning how to incorporate the select sort and get min range fuctions I wrote for the exercises in the book into this function.
+ 
+LEARNED: USE THE CONTENTS OF ONE ARRAY TO LABEL THE CONTENTS OF ANOTHER
+ Finally, I learned that I can change the order of the 'percents' array and keep track of the candidate that percentage belongs to, as long as I change it along with the 'ranks' array.  In fact, in order to get the replaced percentage back in the line up for comparison, I need to move around the percentages in the percentages array.
+ 
+ */
