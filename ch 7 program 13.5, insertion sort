@@ -1,0 +1,128 @@
+//
+//  main.c
+//  ch 7 program 13.5, insert
+//
+//  Created by Ryan Roderick on 12/22/20.
+//
+
+/* Insertion sort */
+
+/* This program is an exercise I figured out to help me write an insertion sort function.  I decided to rank the coldest days of the week.  This choice allowed me to fill an array of seven values and shift them around to maintain the order from coldest to warmest.  The program initializes an array, then fills it from standard input, one temperature at a time.
+ */
+
+#include <stdio.h>
+
+#define SENTINEL 200
+
+void initialize_array(int array[], int array_length);
+
+int insertion_sort(int array[], int array_length, int number);
+
+int main(int argc, const char * argv[]) {
+    
+    int array_length = 7;
+    int coldest_days[array_length];
+    int temperature = 150;
+    int i;
+    
+    initialize_array(coldest_days, array_length);
+    
+    printf("initialized array: \n");
+    for (i=0; i<array_length; ++i)
+    {
+        printf("%d  ", coldest_days[i]);
+    }
+    printf("\n\n");
+    
+    
+    printf("What was today's lowest temperature? \n");
+    scanf("%d", &temperature);
+        
+    while (temperature != SENTINEL)
+    {
+        insertion_sort(coldest_days, array_length, temperature);
+        
+        printf("coldest_days update: \n");
+        for (i=0; i<array_length; ++i)
+        {
+            printf("%d  ", coldest_days[i]);
+        }
+        printf("\n\n");
+        
+        printf("What was today's lowest temperature? \n");
+        scanf("%d", &temperature);
+        
+    }
+    
+    printf("\n");
+    
+    return (0);
+}
+
+
+int insertion_sort(int array[], int array_length, int number)
+{
+    int i;
+    int q;
+    int r;
+    int j;
+    
+    i=0;
+    q = array_length - 2; /* These subtractions keep the loop from overwriting in the heap. */
+    r = array_length - 1;
+    
+    while (i < array_length) /* Starting with 0. */
+    {
+        if (number < array[i]) /* If not, 'i' increments.
+                                If so, all the elements move over one space, copying the value at 'array[i]' into the next increment over so that the program can copy 'number' into its place. */
+        {
+            while ( r > i ) /* 'i' will */
+            {
+                array[r] = array[q]; /* This statement copies the value in the next to last number over the last number in the array, and decrements back through the array until it gets the beginning of the array. */
+                --q;
+                --r;
+            }
+            
+            for (j=0; j<array_length; ++j)
+            {
+                printf("%d  ", array[j]);
+            }
+            printf("\n\n");
+
+            printf("Notice that the program copied all the values larger than the current temperature one space to the right, overwriting the last number from the previous array.  That way, the program can overwrite the new temperature, %d, into array[%d]. \n\n", number, q+1);
+            
+            array[i] = number;
+
+            /* The array prints out again in the 'main' funciton. */
+            
+            return(0);
+        }
+        ++i;
+    }
+    
+    return(0);
+}
+
+
+void initialize_array(int array[], const int array_length)
+{
+    int i;
+    for (i=0;  i != array_length;  ++i)
+    {
+        array[i] = SENTINEL + i;
+    }
+}
+
+/* I need the element at 'array[i]' to move over one space (along with the rest of the numbers after the element at 'i').  So, each incremented value at 'r' needs to go through the below switch while it is greater than or equal to 'i', which will duplicate the value at 'i' that was greater thana the 'number', thus creating a space in 'array[]' to overwrite the smaller value.
+ 
+Originally, in the 'while' condidtion I had 'r >= i', but that was making the switch go one increment too far, into the heap, I think, so that the 'array' with space' printed a 1 in its first element.  Because 'q' is equal to 'array_length -1' and decrements from there, the 'q > i' works to create the space without going one two far into the heap.  For the first iteration, it ends up assigning 'array[2] = array[1]' which is exactly the duplication that the program needs. */
+
+/* What was happening here was that I was using 'array_length' and 'array_length -1', which is 7 and 6, respectively.  The compiler was printing out the value of 1 at 'array[7]'; it hadn't been initialized, so maybe it was just some default thing this compiler does.  But the 1 was coming from the heap.  That is bad because there is no way of knowing what is there or how this program would run on other compilers.  The printf debugging helped me figure that out and assign the correct values for the array length.  The lesson might be that if a program is experiencing an array overflow, it might be because of the numbers its putting into the conditions. */
+
+/* I figured out that I need to shift the values in the array, starting at the end.  So, the increments start at 'array_length' and 'array_length - 1', and decrement from there.  After the 'while' loop makes that space, the program simply assigns the 'number' to that 'i' increment in the array. */
+
+/* I found my way clear to replace MAX_LENGTH with a constant integer 'array_length'.  This should make my code better. */
+
+/* Getting this started, I brought in the 'initialize_array' function from another program.  I discovered through printf debugging that I had a type double array in it instead of an integer array, so my array wasn't initializing to the sentinel value.  The nice thing was that I declared some variables and then the initialize function, and put a print statement for the array in the 'main' function right away.  Adding that debugging statement helped me find all these little things I hadn't done yet and getting that set up was easy because I knew to bring in the initialization function, and print out the array to check it right away.
+ 
+ Looking at the book for a while, helped me know to have a 'while' loop in the 'main' function for input.  Then, I figured I would call the function from within the 'while' loop so I could get a step by step print out of the array that the program inserts numbers into. */
