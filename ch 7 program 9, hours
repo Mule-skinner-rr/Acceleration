@@ -1,0 +1,342 @@
+//
+//  main.c
+//  ch 7 program 9
+//
+//  Created by Ryan Roderick on 10/12/20.
+//
+
+/* From "Problem Solving and Program Design in C" by Jeri Hanly and Elliot Koffman, 7th Ed., 2013. */
+
+/* Program 9 page 448 */
+
+/* Write an interactive program that plays a game of horse.
+ 
+ Store the word to be guessed in successive elements of an array of individual characters called 'word'.
+ 
+ The player must guess the letters belonging to 'word'.
+ 
+ The program should terminate when either all letters have been guessed correctly (the player wins) or a specified number of incorrect guesses have been made (the computer wins).
+ 
+ HINT: Use another array, 'guessed', to keep track of the soltion so far.  Initialize all elements of 'guessed' to be the '*' symbol.
+ 
+ Each time a letter in 'word' is guessed, replace the corresponding '*' in guessed with that letter.
+ */
+
+#include <stdio.h>
+
+#include <ctype.h>
+
+#define MAX_LENGTH 21
+
+#define NOT_FOUND -1
+
+#define LIMIT 3
+
+#define ALPHABET 26
+
+/* SET UP SECTION */
+void display_welcome(void);
+
+void initialize_to_null(char[]);
+
+int get_word(char[]);
+
+void initialize_to_underscores(char[], int);
+
+/* LOOP SECTION */
+void prompt_for_letter(int);
+        
+int check_and_update_arrays(int, char[], char, char[]);
+
+void update_alphabet(char[], char);
+
+void display_array(char[], int);
+
+int check_win_lose(int, int);
+
+void big_display(char[], char[], char[], int);
+
+
+
+int main(int argc, const char * argv[])
+{
+    /* SET UP SECTION */
+    display_welcome();
+    
+    
+    
+    char word[MAX_LENGTH];  /* Set up and get the array. */
+    initialize_to_null(word);
+    int length;             /* Return the 'length' of the word. */
+    length = get_word(word);
+    
+
+    
+    char guessed[MAX_LENGTH];   /* Set up and initialize arrays. */
+    char garbage_letters[LIMIT];
+    initialize_to_underscores(guessed, length);
+    initialize_to_underscores(garbage_letters, LIMIT);
+    
+    
+    
+    char alphabet[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z' }; /* Set up and initialize array. */
+
+
+    /* LOOP SECTION */
+    char guess_letter;
+    int found=0;    /* Flag and accumulator variable */
+    int correct=0;  /* Accumulator variables */
+    int missed=0;
+    int game_over=0;
+
+    
+    
+    int status; /* Prime the loop. */
+    prompt_for_letter(length);
+    status = scanf(" %c", &guess_letter);
+    
+    
+
+    while ( status == 1 ) {
+
+        found = check_and_update_arrays(length, word, guess_letter, guessed);
+                
+        if (found) {
+                    
+            correct += found;
+                        
+            puts("\nCorrect!");
+            
+            update_alphabet(alphabet, guess_letter);
+
+
+            big_display(alphabet, garbage_letters, guessed, length);
+            
+            
+            game_over = check_win_lose(correct, length);
+                
+            if (game_over) {
+                puts("You win! \n");
+            }
+            
+        } else {
+
+            garbage_letters[missed] = guess_letter;
+            /* Because 'update_alphabet' replaces a letter with the '_', and updating 'garbage_letters' replaces a '_' with the letter, sending the 'guess_letter' to a general 'update_array' function doesn't work.  So I just do the update here. */
+            
+            ++missed;
+            
+            puts(" ");
+            puts("Incorrect! \n");
+            
+            update_alphabet(alphabet, guess_letter);
+            
+            big_display(alphabet, garbage_letters, guessed, length);
+              
+            
+            game_over = check_win_lose(missed, LIMIT);
+            
+            if (game_over) {
+                puts("You lose! \n");
+            }
+            
+        }
+        
+        
+        
+        if (game_over)
+            return (0); /* I don't end the program with the 'return(0)' statement until here because I want the last displays to appear first. */
+
+
+
+        status = 0;
+        printf("Please choose a letter: ");
+        status = scanf(" %c", &guess_letter);
+    
+    }
+    
+    
+    
+    return(0);
+
+}
+
+
+
+void big_display(char array1[], char array2[], char array3[], int limit)
+{
+    puts("ALPHABET:");
+    display_array(array1, ALPHABET);
+    
+    puts("GARBAGE LETTERS:");
+    display_array(array2, LIMIT);
+    
+    puts("GUESSED:");
+    display_array(array3, limit);
+}
+
+
+
+/* SET UP SECTION */
+void display_welcome(void)
+{
+    puts("Welcome to the GUESS WORD GAME!!!\n");
+    puts("One of you will pick a word, and the other will try to guess it one letter at a time!!!\n");
+    puts("Now, have one person choose a word and enter it into the computer...");
+}
+
+
+
+void initialize_to_null(char array[])
+{
+    int i;
+    
+    for (i=0; i<MAX_LENGTH; ++i)
+    {
+        array[i] = '\0' ;
+    }
+}
+
+
+
+int get_word(char word[])
+{
+    
+    char word_letter;
+    int length=0; /* Increment and accumulator variable */
+                
+    
+    
+    word_letter = getchar();
+                            
+    while ( word_letter != '\n' &&
+            length < MAX_LENGTH )
+    {
+        
+        word[length] = word_letter;
+        
+        ++length;
+        
+        
+        
+        word_letter = getchar();
+    }
+    /* This 'while' loop puts each letter from standard input into the 'word' array.  It uses '++length' to increment through the 'word' array.  'length' also acts as an accumulator variable that returns the total number of letters in the word to the 'check_and_update_arrays' and 'sort_and_report' functions. */
+    
+    
+    
+    return(length);
+}
+
+
+
+void initialize_to_underscores(char array[], int length)
+{
+    int i;
+    
+    for (i=0; i < length; ++i)
+    {
+        array[i] = '_' ;
+    }
+}
+
+
+
+/* LOOP SECTION */
+void prompt_for_letter(int length)
+{
+    puts("\n\n\n\n\n");
+    printf("Your word has %d letters.\n", length);
+    printf("You can continue guessing letters for the word until you have %d incorrect guesses.\n", LIMIT);
+    puts("Your guesses are case sensitive. \n");
+    
+    printf("Please choose a letter: ");
+
+}
+
+
+
+int check_and_update_arrays(int length, char word[], char guess_letter, char guessed[])
+{
+    
+    int found=0;
+    int i=0;
+    
+    while ( i < length )
+    {
+        if ( word[i] == guess_letter )
+        {
+            guessed[i] = guess_letter;
+            
+            word[i] = '*';
+            /* Both these assignments need to happen here because the 'i' is incremented to the correct integer and will fill each parallel array at that point.  Keeping track of this and sending it all to another function is too complicated when it can just be done here.  And, the return variable is 'found' which is both a flag and accumulator variable */
+                        
+            ++found;
+            
+        } else
+            
+            ++i;
+    }
+    
+    
+    
+    return(found);
+    
+}
+
+
+
+void update_alphabet(char alphabet[], char guess_letter)
+{
+    guess_letter = toupper(guess_letter);
+    
+    int i;
+    
+    for (i=0; i<ALPHABET; ++i)
+    {
+        if( alphabet[i] == guess_letter )
+            
+            alphabet[i] = '_';
+    }
+}
+
+
+
+void display_array(char array[], int limit)
+{
+    int i;
+    
+    for (i=0; i<limit; ++i)
+    {
+        printf("%c ", array[i]);
+    }
+    puts("\n");
+}
+
+
+
+int check_win_lose(int tally, int total)
+{
+    int game_over=0;
+    
+    if (tally == total)
+    {
+        game_over = 1;
+    }
+    return(game_over);
+}
+
+
+
+/*
+ LEARNED: WRITE SHORTER FUNCTIONS
+ What I learned: What has taken me to the next level on this program was rewriting it to break up the large loop section I had that would sort, print, and check the letter input from the user.  And, along with that came the ability to write more reusable functions.  At first, only the initialization to spaces function would do this, but later I had more display functions use this too.  The reusable functions have generic variables that the program simply populates with new information.  They remind me of loops.
+ 
+ LEARNED: WRITE A LOOP IN THE MAIN FUNCTION TO RETURN THERE
+ I started writing this program line by line and got to work, almost completely, in two days.  I scrapped that to write it in more modular mode, but I had trouble until I realized that I needed a loop in the main function to keep me from dumping out of the bottom of the program.  I figured this out by reviewing the chapter in the book about functions and learned that the compiler comes back to the end of the last function call, not to it's first function call in the main.
+ 
+ After completing a working program, I reviewed it with an expensive online tutor.  He suggested I break up my large function into smaller ones, eliminate the pointers, and make some other changes that would make the program interact with the user better.  He also explained that during the design process, he plans it out even though he doesn't know everything he is going to find.  Then, he will go on to design more and code more after that.  So, I will spend more time studying and implementing that part of the process in the future.
+ 
+ LEARNED: SMALLER FUNCTIONS ARE MORE REPEATABLE
+ It took me three more days to implement those changes, and I saw how I could combine functions into repeatable ones after working on it for a day then comming back to it.  And, making shorter generic functions allowed me to take out all of the pointers.
+ */
