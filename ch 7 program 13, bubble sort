@@ -1,0 +1,207 @@
+//
+//  main.c
+//  ch 7 program 13, bubble
+//
+//  Created by Ryan Roderick on 12/13/20.
+//
+
+/* The fun thing about solving this problem was seeing the progress of the looped bubble sort.  To see this, the program prints out trace statements to track the progress of the loops.
+ I developed this read out by trying to extract information from the execution of the 'bubble_loop' function: I wanted to know how many numbers were out of order.
+ First, I found that I could use a counter variable to count each time the loop switched values around.  Returning that integer back to the 'main' function, I could print out a variable I called 'noise' to get a rough gauge of now much switching the loop enacted in the process of getting the array in order.
+ Then, I found that I could count how many numbers the loop picked up and moved up during any one iteration of the 'bubble_sort'.  Tracking and counting this movement became one of the cool demonstrations of this program.  And, to accomplish it, I nested a 'while' loop in the 'bubble_sort' function.
+ The 'bubble_sort' function starts with a 'while' loop that increments through the entire array.  Its condition is if 'i' is less than the 'array_length'.  Then, an 'if' statement compares the values at increment 0 and 1, which increment as 'i' and 'j'.  If 'i' is greater than 'j', the 'flags' variable increments and the program prints a header for 'i vs. j'.
+ Then, a 'while' loop, nested in the 'if' statement with the SAME condition (if 'i' is greater than 'j') executes to re-assign the value at 'j' to a higher increment as long as the value at that increment is less than itself.  The inner 'while' loop is what I came up with to extract information from the 'bubble_sort' function.
+ However, I was still unable to get an absolute value for how many numbers were out of order in the original array because the program might pick up and 'put down' a number more than once (on subsequent iterations of the 'bubble_sort' function) before it is in its ultimate order.
+ Finally, because I couldn't find a way to get the exact number of values that were out of order, I decided to keep some of the tracking in order to demonstrate how the bubble sort works.  And, I consoled myself with the idea that if I ever needed any of this information, I might find a way to get it using these methods or some version of them.
+ */
+
+/* From "Problem Solving and Program Design in C" by Jeri Hanly and Elliot Koffman, 7th Ed., 2013. */
+
+/* Chapter 7 page 450 */
+
+/* "The  b u b b l e  s o r t  is another technique for sorting an array.  A bubble sort compares adjacent array elements and exchanges their values if they are out of order.  In this way, the smaller values "bubble" to the top of the array (toward element 0), while the larger values sink to the bottom of the array.  After the first pass of a bubble sort, the last array element is in the correct position; after the second pass, the last two elements are correct, and so on.  Thus, after each pass, the unsorted protion of the array contains one less element.  Write and test a function that implements this sorting method."
+ */
+
+
+#include <stdio.h>
+#define MAX_LENGTH 500
+#define SENTINEL 9999
+
+
+void initialize_array(int array[]);
+
+int fill_to_sentinel(FILE *in_pointer, int array[]);
+
+int bubble_sort(int array[], int array_length);
+
+void display(int array[], int array_length);
+
+
+int main(int argc, const char * argv[])
+{
+    int product_ids[MAX_LENGTH];
+    FILE *in_p;
+    int array_length;
+    int flags=0;
+    int total_flags=0;
+    //int total_switches=0; /* I can use this do record 'noise' */
+    int sort_checks=1; /* starts at 1 for the display */
+
+    /* The program begins by initializing an array to a much higher number than it will eventually hold from a text file input.  Then, the program opens the file and assigns a pointer to convey items from the file into the program's array.
+     Finally, for this section, the program fills the array and records the number of items that it input from the text file in 'array_length', and prints the array with a 'display' function so that the user can confirm the data are correct. */
+    
+    initialize_array(product_ids);
+
+    in_p = fopen("random_20.txt", "r");
+    
+    array_length = fill_to_sentinel(in_p, product_ids);
+    
+    /* printf debugging and trace statement */
+    printf("Original array: \n");
+    display(product_ids, array_length);
+    
+    /* In this section, the program performs the 'bubble_sort' in a 'while' loop, and the 'bubble_sort' function itself uses a 'while' loop to move values in the array.
+     In the main function, program increments the number of times it activates 'bubble_sort' in 'sort_checks'.
+     During any one iteration of the 'bubble_sort', which sits in a while loop here and uses a 'while' loop in its definition, the function can move up either one or multiple values as it progresses through the array, and it will move the values either one or many spaces.
+     The program uses the 'flags' varialbe to accumulate the number of times it bubbles a value up until it finds a larger value to bubble up, if any, during each iteration of its 'while' loop.  So, any one iteration of the 'bubble_sort's while loop can bubble upwards more than one number.
+     In the 'total_flags' variable, the program accumulates how many times it bubbled any one number up before the entire array was in order.  Please note that any one number may be picked up and put down more than once before the program assigns it to its final, correct, order.
+     */
+    
+    printf("SORT CHECK: %d \n", sort_checks);
+    flags = bubble_sort(product_ids, array_length);
+    total_flags = flags;
+    
+    /* The 'bubble_sort' function prints out a series of comparison statements. */
+    
+    printf("Array result: \n");
+    display(product_ids, array_length);
+    
+    /* At the end of the printed array, the below statement reports how many times the loop picked up another number, which is evident in the comparison statements above. */
+    printf("Values shifted up: %d \n\n\n", flags);
+    /* If the function does not shift any numbers, it will return 0 to 'flags'. */
+
+    if (flags > 0)
+        /* This decision statement checks whether or not the first call to 'bubble_sort' above shifted any numbers. */
+    {
+        while(flags > 0)
+        {
+            ++sort_checks;
+            
+            printf("SORT CHECK: %d \n", sort_checks);
+            flags = bubble_sort(product_ids, array_length);
+            total_flags += flags;
+            
+            printf("Array result: \n");
+            display(product_ids, array_length);
+
+            /* print out at end of array sort. */
+            printf("Values shifted up: %d \n\n\n", flags);
+            //printf("total_switches = %d \n\n", total_switches);
+            /* I can use the 'total_switches' variable it I want to know how much 'noise' is in the original array. */
+        }
+    }
+    
+    printf("TOTAL SORT CHECKS: %d \n", sort_checks); /* Here, 'sort_checks' tells me how many times the program called 'bubble_sort' to check or correct the order of the array. */
+    printf("TOTAL VALUES SHIFTED UP: %d \n\n\n", total_flags); /* The 'total_flags' variable tells me how many times 'bubble_sort' moved values up in the array.  It gives a rough idea of how out of order the array was. */
+    
+    
+    fclose(in_p);
+    
+    return 0;
+}
+
+
+int bubble_sort(int array[], int array_length)
+{
+    int i=0;
+    int j=1;
+    int temp=0;
+    int flags=0;
+    //int switches=0;
+    
+    printf("Switch tracing: \n");
+    
+    while(i < array_length)
+    {
+        if (array[i] > array[j])
+        {
+            ++flags; /* Counts one single number out of order. */
+            
+            printf("  i vs.   j \n");
+            while(array[i] > array[j])
+            {
+                printf("%d vs. %3d \n", array[i], array[j]);
+                temp = array[i];
+                array[i] = array[j];
+                array[j] = temp;
+                /* This loop cycles through once, does the first switch it finds, then incremnts 'i' and 'j' in order to test the next next value against its current largest value.  */
+                ++i;
+                ++j;
+                //++switches;
+            }
+        }
+        ++i;
+        ++j;
+    }
+    printf("\n");
+    --array_length;
+    /* After each complete increment through the array, the largest number will be at the end of it, so it does not need to increment through that one again.
+     The trace statements in standard output show that the 'bubble_sort' function puts the array in order from the beginning and end to the middle.   */
+
+    /* Returning 'flags' will tell me how many values the function picked up and moved. If the user wants to know how many spaces that one or more numbers moved, the program can print out 'switches' here and send back 'switches' for a total count. */
+    
+    return(flags);
+}
+
+
+void display(int array[], int array_length)
+{
+    int i;
+    
+    for (i=0; i < array_length; ++i)
+    {
+        printf("product_ids[%d] = %d \n", i, array[i]);
+    }
+    printf("\n");
+}
+
+
+int fill_to_sentinel(FILE *in_pointer, int array[]) /* page 396, FILE pointer page 344 & 346 */
+{
+    int data;
+    int input_status;
+    int i;
+    int array_length;
+        
+    i=0;
+    input_status = fscanf(in_pointer, "%d", &data);
+    while ( input_status == 1 &&
+            data != EOF &&
+            i < MAX_LENGTH )
+    {
+        array[i] = data;
+        ++i;
+        input_status = fscanf(in_pointer, "%d", &data);
+    }
+    array_length = i;
+    
+    return(array_length); /* Returns one more than the last increment number populated by the 'while' loop. */
+}
+
+
+void initialize_array(int array[])
+{
+    int i;
+    for (i=0;  i != MAX_LENGTH;  ++i)
+    {
+        array[i] = SENTINEL;
+    }
+}
+
+/* While writing the nested while loop/if statements, I needed to add an increment for i and j after the end of the first while loop to keep it going.  Otherwise, it stopped after it moved a large number up and found another larger one! */
+
+/* I got the 'bubble_sort' function to bring the highest number in an array to the end.  Then, I put it in a loop to put the whole array in order.  Finally, I got the function to return the number of times it combed through an array to get it in order.  This is useful to make sure an array is in order, and to gague how out of order it was. */
+
+/* After I copied in the file pointer function and declaration, the compiler is saying that it does not recognize the type FILE in the prototype.  To solve this, I put my #include and #define statements BEFORE the prototypes!  Stackover flow helped, but didn't have this simple answer.  They usually thing I have smarter questions! */
+
+/* I duplicated the "Product_100_array.txt" from my last file, then dragged it over to my new file, but it was "Product_100_array copy .txt" or something so I was getting a bad access thread. */
