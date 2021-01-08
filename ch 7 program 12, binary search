@@ -1,0 +1,243 @@
+//
+//  main.c
+//  ch 7 program 12, binary search
+//
+//  Created by Ryan Roderick on 12/5/20.
+//
+
+/* From "Problem Solving and Program Design in C" by Jeri Hanly and Elliot Koffman, 7th Ed., 2013. */
+
+/* problem 12 pages 449-450 */
+
+/* The  b i n a r y  s e a r c h  algorighm that follows may be used to searh an array when the elements are in order.  This algorighm is analgous to the following approach for finding a name in a telephone book.
+a. Open the book in the middle, and look at the middle name on the page.
+b. If the middle name isn't the one you're looking for, decide whether it comes before or after the name you want.
+c. Take the appropriate half of the seciton of the book you were looking in and repeat these steps until you land on the name.
+
+ALGORITHM FOR BINARY SEARCH
+1. Let 'bottom' be the subscript of the initial array element.
+2. Let 'top be the subscript of the last array element.
+3. Let complete be false.
+4. Repeat as long as 'bottom' isn't greater than 'top' and the target has not been found.
+    5. Let 'middle be the subscript of the element halfway between 'bottom' and 'top'.
+    6. If the element at 'middle' is the target:
+        7. Set 'complete' to true and 'index' to 'middle'.
+        else if the element at 'middle' is larger than the target
+        8. Let 'top' be 'middle' -1.
+        else
+        9. Let 'bottom' be 'middle' + 1.
+ 
+ Write and test a function 'binary_search' that implements this algorithm for an array of integers.  When there is a large number of array elements, which function do you think is faster: 'binary_srch' or the linnear search function of Fig. 7.14?
+ */
+
+/* Plan:
+ I need an array of about 100 numbers in order.  Taking them from a file will be best for testing. So I could get the numbers online and copy them into a file.  Then, I could scan them in, write a sort function to put them in order, and do the binary search.  I should be able to start with 10 or 20 numbers.  Finally, I need to write the binary_search function and a display function.
+ */
+
+#include <stdio.h>
+#define MAX_LENGTH 500
+#define SENTINEL 9999
+#define STOP_LOOP -1
+
+
+void initialize_array(int array[]);
+
+int fill_to_sentinel(FILE *in_pointer, int array[]);
+
+int subscript_of_smallest(int array[], int fill, int array_length);
+
+void select_sort(int array[], int array_length);
+
+int binary_search(const int array[], int target, int array_length);
+
+
+int main(int argc, const char * argv[])
+{
+    int product_ids[MAX_LENGTH];
+    int array_length;
+    int i;
+    int target=0;
+    int product_location; /* This will be the increment of the target value. */
+    FILE *in_p;
+    
+    
+    in_p = fopen("Product_100_array.txt", "r");
+    
+    
+    initialize_array(product_ids);
+    
+    array_length = fill_to_sentinel(in_p, product_ids); /* returns the total number of items in the array. */
+    
+    fclose(in_p);
+
+    select_sort(product_ids, array_length);
+    
+    /*printf debugging and trace statement */
+    
+    for (i=0; i < array_length; ++i)
+    {
+        printf("product_ids[%d] = %d \n", i, product_ids[i]);
+    }
+    printf("\n");
+    
+    
+    /* Binary search prompt */
+    printf("Which product number would you like to locate? \n");
+    printf("(Enter %d to quit.) ", STOP_LOOP);
+    
+    scanf("%d", &target);
+    printf("\n");
+    
+    while (target != STOP_LOOP) /* This value will come from the user. */
+    {
+        product_location = binary_search(product_ids, target, array_length);
+        
+        if (product_location >= 0 && /* The first array increment: 0. */
+            product_location < array_length)
+        {
+            printf("Product #%d is at increment number %d \n\n", target, product_location);
+            
+            printf("Which product number would you like to locate? \n");
+            printf("(Enter %d to quit.) \n", STOP_LOOP);
+            
+            scanf("%d", &target);
+            printf("\n");
+        } else {
+            printf("Item number %d is not in inventory. \n\n", target);
+            
+            printf("Which product number would you like to locate? \n");
+            printf("(Enter %d to quit.) \n", STOP_LOOP);
+            
+            scanf("%d", &target);
+            printf("\n");
+        }
+    }
+    
+    return (0);
+}
+
+
+int binary_search(const int array[], int target, int array_length)
+{
+    int bottom = 0, /* beginning of the search */
+    top = array_length - 1, /* end of the search */
+    complete = 0,
+    middle = array_length / 2; /* middle of the search, rounds up */
+    /* printf debugging throughout */
+    printf("array_length = %d \n", array_length);
+    printf("initial middle = %d \n", middle);
+    
+    while(array[bottom] <= array[top] && !complete)
+    {
+        if (array[middle] == target) {
+            printf("array[middle] == target \n");
+            printf("           %d == %d \n\n", array[middle], target);
+            complete = 1; /* This value will stop the loop. */
+            printf("complete = %d \n", complete);
+            
+        } else if (bottom == middle &&
+                    top == middle) {
+            middle = -1; /* 'middle' equaling -1 indicates that the value is not in the array. */
+            complete = 1;
+            printf("bottom = %d \n", bottom);
+            printf("middle = %d \n", middle);
+            printf("top = %d \n", top);
+            printf("value at middle = %d \n\n", array[middle]);
+            
+        } else if (array[middle] > target) {
+            top = middle - 1;
+            /* Here, the program sets the new top at middle minus one because the value at middle is greater than the target. */
+            middle = top / 2; /* These 'int's round down. */
+            /* Since the new top is the old middle minus one, the new middle is the new top divided by two. */
+            printf("bottom = %d \n", bottom);
+            printf("middle = %d \n", middle);
+            printf("top = %d \n", top);
+            printf("value at middle = %d \n\n", array[middle]);
+            
+        } else if (array[middle] < target) { /* Now, the program sets a new bottom at middle plus one because the current value at middle is smaller than the target. */
+            bottom = middle + 1;
+            middle = ((top - bottom) / 2) + bottom; /* Here, the new middle is the old top minus the new bottom. */
+            printf("bottom = %d \n", bottom);
+            printf("middle = %d \n", middle);
+            printf("top = %d \n", top);
+            printf("value at middle = %d \n\n", array[middle]);
+        }
+            
+    }
+    
+    return(middle);
+}
+
+
+void select_sort(int array[], int array_length) /* page 405 */
+{
+    int fill,
+    temp,
+    index_of_smallest;
+    
+    for (fill=0; fill< array_length; ++fill)
+    {
+        index_of_smallest = subscript_of_smallest(array, fill, array_length);
+        
+        if (fill != index_of_smallest)
+        {
+            temp = array[index_of_smallest];
+            array[index_of_smallest] = array[fill];
+            array[fill] = temp;
+        }
+    }
+}
+
+
+int subscript_of_smallest(int array[], int fill, int array_length) /* page 392 */
+{
+    int i;
+    
+    for (i=fill; i<array_length; ++i)
+    {
+        if (  array[i] < array[fill] )
+            
+            fill = i;
+    }
+    
+    return(fill);
+}
+
+
+int fill_to_sentinel(FILE *in_pointer, int array[]) /* page 396, FILE pointer page 344 & 346 */
+{
+    int data;
+    int input_status;
+    int i;
+        
+    i=0;
+    input_status = fscanf(in_pointer, "%d", &data);
+    while ( input_status == 1 &&
+            data != EOF &&
+            i < MAX_LENGTH )
+    {
+        array[i] = data;
+        ++i;
+        input_status = fscanf(in_pointer, "%d", &data);
+    }
+    
+    
+    return(i); /* Returns one more than the last increment number populated by the 'while' loop. */
+}
+
+
+void initialize_array(int array[])
+{
+    int i;
+    for (i=0;  i != MAX_LENGTH;  ++i)
+    {
+        array[i] = SENTINEL;
+    }
+}
+
+/* The program works with duplicate numbers as array values, but it does not identify each one.  If I wanted the program to return each instance of a given value in the array, I would need the binary search function to continue searching the array until the value was not found, returning the location of each increment of the value as the program located it. */
+
+/* Getting a customized array length makes the program more flexible. */
+
+/* The binary search algorithm finds numbers faster.  It is different than a linnear search because it skips around and gets there with out checking each and every value in the array.
+ */
