@@ -1,0 +1,56 @@
+HERE IS A SKETCH FOR TRACING THE BINARY SEARCH LOOP:
+
+while (array[bottom] < array[top])	target = 198;
+	[6]			[20]
+	198	<		998	true
+
+
+	if (array[middle] == target)
+				[10] == target;	
+				430 == 873; 	false
+			i = middle;
+
+	else if (array[middle] > target)
+			   	[10] > target;
+			   	430 > 873;  false
+			top = middle - 1
+			    = 
+			top = 
+
+			middle = top / 2;
+			       = ;
+			middle = ;
+
+	else
+		bottom = middle + 1;
+		bottom = [10] + 1;
+		bottom = [11]
+		middle = (top - bottom) / 2 + bottom
+			 = ((20 - 11) / 2) + 11
+			 = 	((9) / 2) + 11
+			 = 	    4  + 11
+		middle = 15 
+
+
+HERE ARE THE VALUES IN THE 'product_ids' ARRAY:
+
+product_ids[0] = 27 
+product_ids[1] = 50 
+product_ids[2] = 63 
+product_ids[3] = 80 
+product_ids[4] = 101 
+product_ids[5] = 189 
+product_ids[6] = 198 
+product_ids[7] = 243 
+product_ids[8] = 314 
+product_ids[9] = 361 
+product_ids[10] = 430 
+product_ids[11] = 431 
+product_ids[12] = 442 
+product_ids[13] = 453 
+product_ids[14] = 642 
+product_ids[15] = 707 
+product_ids[16] = 873 
+product_ids[17] = 943 
+product_ids[18] = 978 
+product_ids[19] = 998 
