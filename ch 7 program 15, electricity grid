@@ -1,0 +1,260 @@
+//
+//  main.c
+//  ch 7 program 15, grid
+//
+//  Created by Ryan Roderick on 12/25/20.
+//
+
+/* From "Problem Solving and Program Design in C" by Jeri Hanly and Elliot Koffman, 7th Ed., 2013. */
+
+/* Chapter 7 page 450-1 */
+
+/* "Peabody Public Utilities tracks the status of its power service throughout the city with a 3 X 4 grid in which each cell represents power service in one sector.  When power is available everywhere, all grid values are 1.  A grid value of 0 indicates an outage somewhere in the sector.
+
+"Write a program that inputs a grid from a file and displays the grid.  If all grid values are 1, display the message:
+
+'Power is on throughout grid.'
+
+"Otherwise, list the sectors that have outages:
+
+'Power is off in sectors:
+    (0,0)
+    (1,2)'
+ 
+ "Include in hour program functions 'get_grid', 'display_grid', 'power_ok', and 'where_off'.  Function 'power_ok' returns true (1) if power is on in all sectors, false (0) otherwise.  Function 'where_off' should display the message regarding sectors experiencing outages.
+ */
+
+#include <stdio.h>
+
+#define MAX 4
+
+void initialize_table(int table[][MAX], int initialization_value);
+
+int get_grid(int grid[][MAX], int initialization_value, int *row_length, int *column_length);
+
+int power_ok(int grid[][MAX], int target, int where[], int *row_length, int *column_length);
+
+void initialize_array(int array[], int list_length, int initialization_value);
+
+void display_grid(int grid[][MAX], int *row_length, int *column_length);
+
+void where_off(int array[], int pairs);
+
+void error_messages(int valid_table);
+
+int main(int argc, const char * argv[]) {
+    
+    int utility_grid[MAX][MAX];
+    int initialization_value = -1; /* Grid values will be 0 or 1. */
+    int valid_table = 0;
+    int row_length;
+    int column_length;
+    int list_length;
+    int counter=0;
+    int target = 0;
+
+    
+    initialize_table(utility_grid, initialization_value);
+    
+    valid_table = get_grid(utility_grid, initialization_value, &row_length, &column_length); /* The pointers receive the actual value of rows and columns in the file.  */
+        
+    if (valid_table == 1) {
+        
+        list_length = (row_length * column_length); /* The 'list_length' equals the rows times the columns.  It will hold the coordinate pairs that hold 0 in the 'coord_list' array below. */
+        
+        int coord_list[list_length];
+
+        initialize_array(coord_list, list_length, initialization_value);
+        
+        display_grid(utility_grid, &row_length, &column_length);
+
+        counter = power_ok(utility_grid, target, coord_list, &row_length, &column_length);
+            /* Checks power grid and returns 0 if the power is on in every sector.  If power is off in any sector, 'power_ok' returns a multiple of two for each sector that is off. */
+        
+        where_off(coord_list, counter);
+            /* Displays the coordinates of the sectors where power is off. */
+    } else {
+        
+        error_messages(valid_table);
+    }
+    
+    return (0);
+}
+
+/* This function displays error messages if there was a problem scanning data from the 'get_grid' function.  What's cool is that the 'valid_table' sends in the integers zero and two, indicating which message to print. */
+void error_messages(int valid_table)
+{
+    if (valid_table == 0) {
+        
+        perror("The FILE didn't open. \n");
+        printf("Please check the file name and working directory. \n");
+        
+    } else if (valid_table == 2) {
+        
+        printf("The values in the list of coordinates exceed the available memory locations.  Please check the 'MAX' size of your memory allocation for the grid file. \n\n");
+    }
+
+}
+
+
+/* This function prints the coordinates of sectors that are off, or confirms the none of them are off. */
+void where_off(int array[], int pairs)
+{
+    int f=0;
+    int g=1;
+    
+    if (pairs == 0) {
+    
+        printf("Power is on throughout grid. \n\n");
+
+    } else {
+        
+        printf("Power is off in sectors: \n");
+        
+        for (f=0; f < pairs; f += 2)
+        {
+            printf("(%d,%d) \n", array[f], array[g]);
+            
+            g += 2;
+        }
+        printf("\n");
+    }
+        
+    
+}/* The function below records the sector coordinates of where power is out in the 'coord_list' array.  Each sector takes up two increment spaces in the array, so array's increment variables increase by two.  The first element in 'coord_list' is a sector's row; the second is its column, and so on.
+ */
+int power_ok(int grid[][MAX], int target, int where[], int *row_length, int *column_length)
+{
+    /* Increment values to point to the grid, or table, elements. */
+    int i=0;
+    int j=0;
+    /* Increment values to point to the sector coordinates. */
+    int q=0;
+    int r=1;
+    
+    int counter=0;
+    
+    while (i < *row_length)
+    {
+        j=0; /* Resets column counter for the next row. */
+        while (j < *column_length)
+        {
+            if (grid[i][j] == target)
+            {
+                where[q] = i;
+                where[r] = j;
+                q += 2; /* Each ordered pair element increments by two. */
+                r += 2;
+                counter += 2; /* Returns to the main function to indicate 1) whether the function found any errors, and 2) how many errors if there were any so that the display function can have an array length for printing them out. */
+            }
+            ++j; /* Increments column. */
+        }
+        ++i; /* Increments row. */
+    }
+
+    return(counter);
+}
+
+
+int get_grid(int grid[][MAX], int initialization_value, int *row_length, int *column_length)
+{
+    int status = 0;
+    FILE *sector_pointer;
+    int row_number = 0;
+    int column_number = 0;
+    int sector_value;
+    int valid_table = 0;
+    
+    /* page 396, FILE pointer page 344 & 346 */
+    sector_pointer = fopen("current_power.txt", "r");
+    /* The following 'perror' checks whether users have put the correct file name in the 'fopen' function and whether their scheme is pointing to the correct file location.  The actual message prints out from the 'error_messages' function, and 'valid_table' returns a zero or two to indicate which message it should print. */
+    if (sector_pointer == NULL) {
+        valid_table = 0;
+        return(valid_table);
+    }
+    
+    status = fscanf(sector_pointer, "%d%d%d", &row_number, &column_number, &sector_value);
+
+    while (status == 3 &&
+           row_number < MAX &&
+           column_number < MAX &&
+           row_number >= 0 &&
+           column_number >= 0)
+    {
+        if (sector_value == 1 ||
+            sector_value == 0) {
+            
+            grid[row_number][column_number] = sector_value;
+                /* This is where program assigns the sector value into the grid array, the point of the function. */
+            
+        }
+        
+        status = fscanf(sector_pointer, "%d%d%d", &row_number, &column_number, &sector_value);
+    }
+    
+    if (status == EOF) {
+        
+        valid_table = 1;
+        
+    } else {
+        
+        /* Row or column numbers were out of range. */
+        valid_table = 2;
+        return(valid_table);
+    }
+
+    *row_length = row_number + 1;
+    *column_length = column_number + 1;
+        /* These values increment so that the program can calculate how long 'list_length' should be.  It does this calculation in the 'main' function. */
+    
+    fclose(sector_pointer);
+    
+    return(valid_table);
+}
+
+
+void initialize_table(int table[][MAX], int initialization_value)
+{
+    int row_number;
+    int column_number;
+    
+    for (row_number = 0; row_number < MAX; ++row_number)
+    {
+        for (column_number = 0; column_number < MAX; ++column_number)
+        {
+            table[row_number][column_number] = initialization_value;
+        }
+    }
+}
+
+
+void initialize_array(int array[], int list_length, int initialization_value)
+{
+    int i=0;
+    
+    for (i=0; i < list_length; ++i)
+    {
+        array[i] = initialization_value;
+    }
+}
+
+
+void display_grid(int grid[][MAX], int *row_length, int *column_length)
+{
+    int row_number;
+    int column_number;
+    
+    for (row_number = 0; row_number < *row_length; ++row_number)
+    {
+        for (column_number = 0; column_number < *column_length; ++column_number)
+        {
+            printf("%d ", grid[row_number][column_number]);
+        }
+        printf("\n");
+    }
+    
+    printf("\n");
+}
+
+
+/* The problem asks me to create separate functions for 'power_ok' and 'where_off'.  But, I created 'power_ok' and it returns the locations of where the power is off in an array.  Breaking it up into two functions would only save the code that executes inside the 'if' statement, in the case that there was a power sector in the grid that was off.  However, if there is no such sector, the 'power_ok' function runs the as it would if it were only looking for a single instance of the power being off in a sector.  So, in a second function, I would need to run the same loop, only including the code that locates the power failure.  Overall, it would increase the ammount of work the computer needs to do to run the program and get the same information.  I'm happy to change the way I wrote it if there is a good reason, but I don't see that at this point.  */
