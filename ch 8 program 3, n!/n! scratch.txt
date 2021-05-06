@@ -1,0 +1,39 @@
+MAIN FUNCTION VARIABLES 
+
+int n; /* The number for the factorial. */
+
+char calc[50]; /* The string for the n! display. */ 
+
+
+FACTORIAL CALCULATION VARIABLES
+
+int i; /* counter */
+
+FUNCTIONS
+
+display(calc
+
+
+ALGORITHM
+1. Repeatedly prompt for an integer between 0 and 9. 
+
+1. a. An input of -1 quits the program. 
+
+1. b. Display an error message if the input is invalid.
+
+
+2. Call 'fact_calc' and output the resulting string in a box of asterisks.
+
+2. a. Test the integer.
+
+2. a. 1. If 0, return string.
+
+2. a. 2. If 1, return string.
+
+2. a. 3. Else, populate factorial string.
+
+2. a. 3. a. Calculate factorial.
+
+2. a. 3. b. Check if there is enough room on 'calc' for the factorial.
+
+2. a. 3. c. Populate as much of 'calc' as possible. 

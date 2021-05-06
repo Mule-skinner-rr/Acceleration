@@ -1,0 +1,11 @@
+/* Formula for result. */
+resistance = pow(((band 1 * 10) + band 2), band 3);
+
+while 
+
+If (band_number == -1)
+{
+	printf("Invalid entry: %s \n", band_colors[i];
+	
+	valid = 0;
+}

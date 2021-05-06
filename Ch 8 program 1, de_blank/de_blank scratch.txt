@@ -1,0 +1,2 @@
+I need to declare two string arrays? one for an input and the other for an output to function 'de_blank'.  The function will take out all the spaces from a sentence in the input string. 
+
